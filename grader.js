@@ -23,6 +23,7 @@
 
 var fs = require('fs');
 var program = require('commander');
+var util = require('util');
 var rest = require('restler');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
@@ -58,13 +59,13 @@ var checkHtmlFile = function(htmlfile, checksfile) {
 	return out;
 };
 
-var buildfn = function(outfile) {
+var buildfn = function(outfile, checksfile) {
 	var response2console = function(result, response) {
 		if (result instanceof Error) {
 			console.error('Error: ' + util.format(response.message));
 		} else {
 			fs.writeFileSync(outfile, result);
-			$ = cheerioHtmlFile(htmlfile);
+			$ = cheerioHtmlFile(outfile);
 			var checks = loadChecks(checksfile).sort();
 			var out = {};
 			for(var ii in checks) {
@@ -79,7 +80,7 @@ var buildfn = function(outfile) {
 };
 
 var checkURL = function(url, checksfile) {
-	var response2console = buildfn('check.url.html');
+	var response2console = buildfn('check.url.html', checksfile);
 	rest.get(url).on('complete', response2console);
 };
 
@@ -93,10 +94,11 @@ if(require.main == module) {
 	program
 		.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
 		.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-		.option('-u, --url <website>', 'Path to website', clone(assertFileExists), HTMLFILE_DEFAULT)
+		.option('-u, --url <website>', 'Path to website', 'undefined')
 		.parse(process.argv);
 
-	if(typeof(program.url !== 'undefined') {
+	console.log(program.url);
+	if(program.url !== 'undefined') {
 		checkURL(program.url, program.checks);
 	} else {
 		var checkJson = checkHtmlFile(program.file, program.checks);
